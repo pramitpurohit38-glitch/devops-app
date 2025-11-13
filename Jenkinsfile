@@ -1,49 +1,43 @@
 pipeline {
     agent any
 
-    environment {
-        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
-        IMAGE_NAME = "pramit01/devops-flask-app"
-    }
-
     stages {
         stage('Clone Repository') {
             steps {
-                git 'https://github.com/<your-username>/<your-repo>.git'
+                git branch: 'main',
+                    url: 'https://github.com/pramitpurohit38-glitch/devops-app.git',
+                    credentialsId: 'github-token'
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                script {
-                    sh 'docker build -t $IMAGE_NAME:latest .'
-                }
+                sh 'docker build -t devops-flask-app .'
             }
         }
 
         stage('Login to Docker Hub') {
             steps {
-                script {
-                    sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
                 }
             }
         }
 
         stage('Push Image to Docker Hub') {
             steps {
-                script {
-                    sh 'docker push $IMAGE_NAME:latest'
-                }
+                sh 'docker tag devops-flask-app $DOCKER_USER/devops-flask-app:v1'
+                sh 'docker push $DOCKER_USER/devops-flask-app:v1'
             }
         }
     }
 
     post {
         success {
-            echo "✅ Docker image successfully built and pushed to Docker Hub!"
+            echo '✅ Pipeline completed successfully!'
         }
         failure {
-            echo "❌ Pipeline failed. Check logs!"
+            echo '❌ Pipeline failed. Check logs!'
         }
     }
 }
