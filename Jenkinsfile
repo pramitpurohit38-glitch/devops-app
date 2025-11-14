@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_USER = credentials('dockerhub')
+        DOCKERHUB_CREDS = credentials('dockerhub-credentials')
     }
 
     stages {
@@ -19,18 +19,33 @@ pipeline {
             }
         }
 
+        stage('Login to Docker Hub') {
+            steps {
+                sh '''
+                    echo "$DOCKERHUB_CREDS_PSW" | docker login -u "$DOCKERHUB_CREDS_USR" --password-stdin
+                '''
+            }
+        }
+
         stage('Push Docker Image') {
             steps {
                 sh '''
-                    echo "Using Docker Hub user: $DOCKER_USER"
-                    
-                    echo $DOCKER_USER_PSW | docker login -u $DOCKER_USER_USR --password-stdin
+                    echo "Using Docker Hub user: $DOCKERHUB_CREDS_USR"
 
-                    docker tag devops-flask-app:latest $DOCKER_USER_USR/devops-flask-app:v1
-                    
-                    docker push $DOCKER_USER_USR/devops-flask-app:v1
+                    docker tag devops-flask-app:latest $DOCKERHUB_CREDS_USR/devops-flask-app:v1
+
+                    docker push $DOCKERHUB_CREDS_USR/devops-flask-app:v1
                 '''
             }
+        }
+    }
+
+    post {
+        success {
+            echo "🎉 Successfully pushed Docker Image"
+        }
+        failure {
+            echo "❌ Failed! Check logs."
         }
     }
 }
