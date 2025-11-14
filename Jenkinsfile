@@ -1,36 +1,21 @@
 pipeline {
     agent any
 
+    environment {
+        DOCKER_USER = credentials('dockerhub')
+    }
+
     stages {
 
-        stage('Clone Repository') {
+        stage('Checkout SCM') {
             steps {
-                git branch: 'main',
-                    url: 'https://github.com/pramitpurohit38-glitch/devops-app.git',
-                    credentialsId: 'github-token'
+                checkout scm
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                sh '''
-                    docker build -t devops-flask-app:latest .
-                '''
-            }
-        }
-
-        stage('Docker Login') {
-            steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'dockerhub',
-                    usernameVariable: 'DOCKER_USER',
-                    passwordVariable: 'DOCKER_PASS'
-                )]) {
-                    sh '''
-                        echo "Logging into Docker Hub as: $DOCKER_USER"
-                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-                    '''
-                }
+                sh 'docker build -t devops-flask-app:latest .'
             }
         }
 
@@ -38,20 +23,14 @@ pipeline {
             steps {
                 sh '''
                     echo "Using Docker Hub user: $DOCKER_USER"
+                    
+                    echo $DOCKER_USER_PSW | docker login -u $DOCKER_USER_USR --password-stdin
 
-                    docker tag devops-flask-app:latest $DOCKER_USER/devops-flask-app:v1
-                    docker push $DOCKER_USER/devops-flask-app:v1
+                    docker tag devops-flask-app:latest $DOCKER_USER_USR/devops-flask-app:v1
+                    
+                    docker push $DOCKER_USER_USR/devops-flask-app:v1
                 '''
             }
-        }
-    }
-
-    post {
-        success {
-            echo "Pipeline completed successfully!"
-        }
-        failure {
-            echo "Pipeline failed! Check logs."
         }
     }
 }
