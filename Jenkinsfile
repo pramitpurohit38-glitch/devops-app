@@ -27,6 +27,7 @@ pipeline {
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
                     sh '''
+                        echo "Logging into Docker Hub as: $DOCKER_USER"
                         echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
                     '''
                 }
@@ -36,6 +37,8 @@ pipeline {
         stage('Push Docker Image') {
             steps {
                 sh '''
+                    echo "Using Docker Hub user: $DOCKER_USER"
+
                     docker tag devops-flask-app:latest $DOCKER_USER/devops-flask-app:v1
                     docker push $DOCKER_USER/devops-flask-app:v1
                 '''
@@ -45,10 +48,10 @@ pipeline {
 
     post {
         success {
-            echo '✅ Pipeline completed successfully!'
+            echo "Pipeline completed successfully!"
         }
         failure {
-            echo '❌ Pipeline failed. Check logs!'
+            echo "Pipeline failed! Check logs."
         }
     }
 }
