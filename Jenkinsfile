@@ -2,6 +2,7 @@ pipeline {
     agent any
 
     stages {
+
         stage('Clone Repository') {
             steps {
                 git branch: 'main',
@@ -12,33 +13,42 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t devops-flask-app .'
+                sh '''
+                    docker build -t devops-flask-app:latest .
+                '''
             }
         }
 
-        stage('Login & Push to Docker Hub') {
+        stage('Docker Login') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-
-                    // Login
-                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
-
-                    // Tag Image
-                    sh 'docker tag devops-flask-app $DOCKER_USER/devops-flask-app:v1'
-
-                    // Push Image
-                    sh 'docker push $DOCKER_USER/devops-flask-app:v1'
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh '''
+                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                    '''
                 }
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                sh '''
+                    docker tag devops-flask-app:latest $DOCKER_USER/devops-flask-app:v1
+                    docker push $DOCKER_USER/devops-flask-app:v1
+                '''
             }
         }
     }
 
     post {
         success {
-            echo "✅ Pipeline completed successfully!"
+            echo '✅ Pipeline completed successfully!'
         }
         failure {
-            echo "❌ Pipeline failed. Check logs!"
+            echo '❌ Pipeline failed. Check logs!'
         }
     }
 }
