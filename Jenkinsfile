@@ -16,28 +16,29 @@ pipeline {
             }
         }
 
-        stage('Login to Docker Hub') {
+        stage('Login & Push to Docker Hub') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
-                }
-            }
-        }
 
-        stage('Push Image to Docker Hub') {
-            steps {
-                sh 'docker tag devops-flask-app $DOCKER_USER/devops-flask-app:v1'
-                sh 'docker push $DOCKER_USER/devops-flask-app:v1'
+                    // Login
+                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+
+                    // Tag Image
+                    sh 'docker tag devops-flask-app $DOCKER_USER/devops-flask-app:v1'
+
+                    // Push Image
+                    sh 'docker push $DOCKER_USER/devops-flask-app:v1'
+                }
             }
         }
     }
 
     post {
         success {
-            echo '✅ Pipeline completed successfully!'
+            echo "✅ Pipeline completed successfully!"
         }
         failure {
-            echo '❌ Pipeline failed. Check logs!'
+            echo "❌ Pipeline failed. Check logs!"
         }
     }
 }
