@@ -1,0 +1,10 @@
+version: '3.8'
+services:
+  service_name:
+    image: image_name
+    ports:
+      - "host_port:container_port"
+    volumes:
+      - "host_path:container_path"
+    environment:
+      - KEY=value
