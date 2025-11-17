@@ -1,10 +1,7 @@
-version: '3.8'
 services:
-  service_name:
-    image: image_name
+  flask-app:
+    image: pramit01/devops-flask-app:v1
+    container_name: flask-app
     ports:
-      - "host_port:container_port"
-    volumes:
-      - "host_path:container_path"
-    environment:
-      - KEY=value
+      - "5001:5000"
+    restart: always
